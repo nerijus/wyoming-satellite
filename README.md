@@ -130,20 +130,25 @@ Once a wake word has been detected, it can not be detected again for several sec
 Note that `--vad` is unnecessary when connecting to a local instance of openwakeword.
 
 ## Run with docker
-You can find a ready to use docker image [here](https://hub.docker.com/repository/docker/sker65/wyoming-satellite). Just pull it with
+
+(You can find a ready to use docker image [here](https://hub.docker.com/repository/docker/sker65/wyoming-satellite). Just pull it with)
 ```sh
 docker pull sker65/wyoming-satellite:latest
 ```
 To run it use
 ```sh
-docker run --rm -it --device /dev/snd --group-add audio \
+export PIPEWIRE_RUNTIME_DIR=/tmp
+docker run --rm -it --volume=/run/user/1000/pipewire-0:/tmp/pipewire-0 \
+  -e=PIPEWIRE_RUNTIME_DIR \
   -p 10700:10700  sker65/wyoming-satellite --name my-satellite \
-  --vad  --vad-trigger-level 1 --vad-threshold 0.6  --debug \
+  --vad --vad-trigger-level 1 --vad-threshold 0.6 --debug \
   --uri 'tcp://0.0.0.0:10700' \
-  --mic-command 'arecord -D default:CARD=USB -r 16000 -c 1 -f S16_LE -t raw'\
-  --snd-command 'aplay -D default:CARD=USB -r 22050 -c 1 -f S16_LE -t raw'
+  --mic-command 'pw-record --target "alsa_input.pci-0000_00_1b.0.analog-stereo" --rate 16000 --channels 1 -' \
+  --snd-command 'pw-play --rate 22050 --channels 1 -'
 ```
-in this example voice activity detection is enabled and sound will only be streamed if someone speaks. Also the mic and sound comamnds use a specific device 'default:CARD=USB'. If you just what to try theh default audio device, just skip the `-D <device>` option.
+in this example voice activity detection is enabled and sound will only be streamed if someone speaks. 1000 is your user uid, the mic command uses a specific device (target). If you want to try the default audio device, just skip the `--target` option.
+Targets can be listed by `pw-cli list-objects Node`.
+
 ## Sounds
 
 You can play a WAV file when the wake word is detected (locally or remotely), and when speech-to-text has completed:
