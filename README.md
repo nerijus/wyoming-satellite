@@ -188,3 +188,20 @@ Satellites can respond to events from the server by running commands:
 * `--timer-finished-command` - timer has finished (timer id on stdin)
 
 For more advanced scenarios, use an event service (`--event-uri`). See `wyoming_satellite/example_event_client.py` for a basic client that just logs events.
+
+## Run with docker
+
+To run it use
+```sh
+export PIPEWIRE_RUNTIME_DIR=/tmp
+docker run --rm -it --volume=/run/user/1000/pipewire-0:/tmp/pipewire-0 \
+  -e=PIPEWIRE_RUNTIME_DIR \
+  -p 10700:10700  sker65/wyoming-satellite --name my-satellite \
+  --vad --vad-trigger-level 1 --vad-threshold 0.6 --debug \
+  --mic-auto-gain 5 --mic-noise-suppression 2 \
+  --uri 'tcp://0.0.0.0:10700' \
+  --mic-command 'pw-record --target "alsa_input.pci-0000_00_1b.0.analog-stereo" --rate 16000 --channels 1 -' \
+  --snd-command 'pw-play --rate 22050 --channels 1 -'
+```
+in this example voice activity detection is enabled and sound will only be streamed if someone speaks. 1000 is your user uid, the mic command uses a specific device (target). If you want to use the default audio device, just skip the `--target` option.
+Targets can be listed by `pw-cli list-objects Node`.
